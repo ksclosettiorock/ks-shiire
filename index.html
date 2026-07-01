@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>K's仕入れAI</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6fb;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}header{background:#111827;color:#fff;padding:22px 18px 18px}h1{margin:0;font-size:28px}header p{margin:6px 0 0;color:#cbd5e1}.card{background:#fff;margin:14px;padding:16px;border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,.08)}h2{margin:0 0 12px;font-size:22px}.btn,button{display:block;width:100%;border:0;border-radius:14px;padding:15px 12px;margin:9px 0;background:#111827;color:white;font-size:17px;font-weight:800;text-align:center}button.sub{background:#374151}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.grid button{margin:0}input,select,textarea{width:100%;font-size:17px;padding:13px;margin:7px 0;border:1px solid #d1d5db;border-radius:13px;background:white;color:#111827}textarea{min-height:76px}.preview{min-height:60px;color:#6b7280;font-size:14px}.preview img{max-width:100%;border-radius:14px;margin-top:10px}.result{font-size:22px;font-weight:900;margin:8px 0}.note{color:#6b7280;font-size:14px;line-height:1.5}.judge{padding:12px;border-radius:13px;background:#eef2ff;font-weight:900}.footer{padding:25px 16px 40px;text-align:center;color:#6b7280;font-size:13px}
+</style>
+</head>
+<body>
+<header><h1>K's仕入れAI</h1><p>写真検索・メルカリ検索・利益計算</p></header>
+
+<section class="card">
+<h2>① 写真</h2>
+<label class="btn">📷 写真を撮る<input id="camera" type="file" accept="image/*" capture="environment" hidden></label>
+<label class="btn">🖼️ 写真から選ぶ<input id="album" type="file" accept="image/*" hidden></label>
+<div id="preview" class="preview">選んだ写真がここに表示されます。</div>
+<p class="note">※Google画像検索へ写真を直接送る機能は、ブラウザ制限により後から追加予定です。まずは商品名・ブランド名検索を使います。</p>
+</section>
+
+<section class="card">
+<h2>② ブランド・商品名</h2>
+<input id="brand" placeholder="ブランド名 例：COACH / RRL / Dickies">
+<textarea id="keyword" placeholder="商品名・特徴 例：ターンロック ショルダーバッグ 黒 レザー"></textarea>
+<div class="grid">
+<button onclick="openSearch('googleImg')">Google画像</button>
+<button onclick="openSearch('google')">Google通常</button>
+<button onclick="openSearch('mercari')">メルカリ</button>
+<button onclick="openSearch('sold')">メルカリ履歴</button>
+<button onclick="openSearch('yahoo')">ヤフオク</button>
+<button onclick="openSearch('rakuma')">ラクマ</button>
+<button onclick="openSearch('ebay')">eBay</button>
+<button class="sub" onclick="copyText()">検索語コピー</button>
+</div>
+</section>
+
+<section class="card">
+<h2>③ 利益計算</h2>
+<input id="buy" type="number" inputmode="numeric" placeholder="仕入れ価格 例：3000">
+<input id="sell" type="number" inputmode="numeric" placeholder="販売予定価格 例：9800">
+<input id="ship" type="number" inputmode="numeric" value="850" placeholder="送料">
+<select id="fee"><option value="0.10">メルカリ 10%</option><option value="0.088">ヤフオク 約8.8%</option><option value="0.066">ラクマ 約6.6%</option></select>
+<button onclick="calc()">利益を計算</button>
+<p id="profit" class="result">利益：¥0</p><p id="rate" class="result">利益率：0%</p><p id="judge" class="judge">価格を入力してください</p>
+</section>
+
+<section class="card">
+<h2>④ ブランド価値メモ</h2>
+<select id="memoSelect" onchange="showMemo()"><option value="">ブランドを選択</option><option value="coach">COACH</option><option value="rrl">RRL</option><option value="dickies">Dickies</option><option value="porter">PORTER</option><option value="humanmade">HUMAN MADE</option></select>
+<p id="memo" class="note"></p>
+</section>
+
+<div class="footer">ホーム画面に追加するとアプリのように使えます。</div>
+<script>
+const $=id=>document.getElementById(id);
+function showPhoto(e){const f=e.target.files&&e.target.files[0]; if(!f)return; const url=URL.createObjectURL(f); $('preview').innerHTML='<img src="'+url+'">';}
+$('camera').addEventListener('change',showPhoto); $('album').addEventListener('change',showPhoto);
+function text(){return (($('brand').value||'')+' '+($('keyword').value||'')).trim()}
+function q(){return encodeURIComponent(text())}
+function openSearch(t){const x=q(); if(!x){alert('ブランド名か商品名を入力してください');return} const u={googleImg:'https://www.google.com/search?tbm=isch&q='+x,google:'https://www.google.com/search?q='+x,mercari:'https://jp.mercari.com/search?keyword='+x,sold:'https://jp.mercari.com/search?keyword='+x+'&status=sold_out',yahoo:'https://auctions.yahoo.co.jp/search/search?p='+x,rakuma:'https://fril.jp/search/'+x,ebay:'https://www.ebay.com/sch/i.html?_nkw='+x}; window.open(u[t],'_blank')}
+async function copyText(){try{await navigator.clipboard.writeText(text()); alert('コピーしました')}catch(e){alert('コピーできませんでした')}}
+function calc(){const buy=+$('buy').value||0,sell=+$('sell').value||0,ship=+$('ship').value||0,fr=+$('fee').value; const fee=Math.floor(sell*fr); const p=sell-fee-ship-buy; const r=sell?Math.round(p/sell*100):0; $('profit').textContent='利益：¥'+p.toLocaleString(); $('rate').textContent='利益率：'+r+'%'; $('judge').textContent=p>=5000&&r>=30?'◎ 仕入れ候補':p>=3000?'○ 条件次第':p>0?'△ 利益薄め':'× 見送り';}
+function showMemo(){const data={coach:'オールドコーチ・本革・USA製・ターンロックは強め。状態で差が大きい。',rrl:'デニム・レザー・ウォレットは強い。ヴィンテージ感がある物は高値狙い。',dickies:'黒・ブラウン・チャコール・USA製・ダブルニー・太めは強め。普通の中国製は利益薄め。',porter:'タンカー・黒・美品は安定。角スレや内側汚れは減額。',humanmade:'人気高め。限定品・付属品・状態が大事。偽物注意。'}; $('memo').textContent=data[$('memoSelect').value]||'';}
+</script>
+</body></html>
